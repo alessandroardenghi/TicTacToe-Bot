@@ -1,5 +1,5 @@
 import numpy as np
-from bot_class import Bot
+from bot_class import ESBot, MCTSBot
 from utils import *
 import os
 from IPython.display import clear_output
@@ -45,9 +45,9 @@ class TicTacToe:
             return 0
         
         if player == self.player0:
-            self.grid[0] |= 1 << position
+            self.grid[0] |= (1 << position)
         else:
-            self.grid[1] |= 1 << position
+            self.grid[1] |= (1 << position)
         
         self.valid_plays.remove(position)
         
@@ -56,24 +56,8 @@ class TicTacToe:
             return 1
         
 
-    def _is_win(self):
-
-        player0, player1 = self.grid
-        for config in self.winning_configurations:
-            if (player0 & config) == config:
-                return 1
-            if (player1 & config) == config:
-                return 1
-        return 0
-
-    def _is_full(self):
-        conf0, conf1 = self.grid
-        if (conf0 | conf1) == (1 << (self.size * self.size)) - 1:
-            return 1
-        return 0
-    
     def _check_status(self):
-        if self._is_win() == 1 or self._is_full() == 1:
+        if is_win(self.grid, self.winning_configurations) == 1 or is_full(self.grid, self.size) == 1:
             return 1
         return 0
 
@@ -103,16 +87,16 @@ class TicTacToe:
             raise ValueError('player2 must be a string: name of the human player, "ESBot" or "MCTSBot"')
         
         if player0 == 'ESBot':
-            self.player1 = Bot('Exhaustive Search')
+            self.player1 = ESBot(self.size, self.winning_configurations)
         elif player0 == 'MCTSBot':
-            self.player1 = Bot('Monte Carlo Tree Search')
+            self.player1 = MCTSBot('Monte Carlo Tree Search', self.size)
         else:
             self.player0 = player0
         
         if player1 == 'ESBot':
-            self.player1 = Bot('Exhaustive Search')
+            self.player1 = ESBot(self.size, self.winning_configurations)
         elif player1 == 'MCTSBot':
-            self.player1 = Bot('Monte Carlo Tree Search')
+            self.player1 = MCTSBot('Monte Carlo Tree Search', self.size)
         else:
             self.player1 = player1
         
@@ -139,13 +123,16 @@ class TicTacToe:
             self._display_board() 
 
             # Get user input for the move
-            user_input = input(f"{self.current_player}, enter row (0,{self.size-1}) and column (0,{self.size-1}) separated by space (press 'enter' to exit the game)")
-
-            if user_input in "":
-                print("\nGame stopped by user (quit command).")
-                break
             
-            if not isinstance(self.current_player, Bot):
+            print(self.current_player)
+            if not isinstance(self.current_player, ESBot):
+
+                user_input = input(f"{self.current_player}, enter row (0,{self.size-1}) and column (0,{self.size-1}) separated by space (press 'enter' to exit the game)")
+
+                if user_input in "":
+                    print("\nGame stopped by user (quit command).")
+                    break
+                
                 try:
                     row, col = map(int, user_input.split())
 
