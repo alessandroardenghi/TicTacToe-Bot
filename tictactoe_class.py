@@ -139,18 +139,23 @@ class TicTacToe:
             self._display_board() 
 
             # Get user input for the move
-            user_input = input(f"{self.current_player}, enter row (1,3) and column (1,3) separated by space (type 'quit' to exit the game)")
+            user_input = input(f"{self.current_player}, enter row (0,{self.size-1}) and column (0,{self.size-1}) separated by space (press 'enter' to exit the game)")
 
-            if user_input.lower().strip() in "quit":
+            if user_input in "":
                 print("\nGame stopped by user (quit command).")
                 break
             
             if not isinstance(self.current_player, Bot):
                 try:
                     row, col = map(int, user_input.split())
+
+                    if (row < 0 or row >= self.size) or (col < 0 or col >= self.size):
+                        print(f"Invalid input. enter row (0,{self.size-1}) and column (0,{self.size-1}) separated by space (press 'enter' to exit the game)")
+                        continue
+
                     position = row * self.size + col  # convert it into a position
                 except ValueError:
-                    print("Invalid input. Please enter two numbers separated by space or type 'quit'")
+                    print(f"Invalid input. enter row (0,{self.size-1}) and column (0,{self.size-1}) separated by space (press 'enter' to exit the game)")
                     continue
 
             else: # Bot's turn
