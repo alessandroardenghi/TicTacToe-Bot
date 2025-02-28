@@ -1,5 +1,5 @@
 import numpy as np
-from bot_class import ESBot, MCTSBot
+from esbot_class import ESBot, MCTSBot
 from utils import *
 import os
 from IPython.display import clear_output

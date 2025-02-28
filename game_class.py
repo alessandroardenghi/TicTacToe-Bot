@@ -1,4 +1,4 @@
-from bot_class import Bot
+from esbot_class import Bot
 from tictactoe_class import TicTacToe
 import numpy as np
 

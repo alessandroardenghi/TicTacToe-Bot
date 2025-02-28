@@ -52,7 +52,7 @@ class ESBot:
 
     def next_move(self, current_state):
         """
-        This method should return the next move of the bot based on the strategy we want to implement.
+        This method should return the next move of the bot using the precomputed tree.
         The current_state parameter is the current state of the game.
         """
         self.current_grid = tuple(current_state)
