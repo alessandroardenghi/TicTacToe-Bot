@@ -62,9 +62,5 @@ class ESBot:
     def __str__(self):
         return self.name
 
-class MCTSBot:
-    pass
-
-
 # bot = ESBot(3, create_win_grids(3))
 # print(bot.strategy[2])
