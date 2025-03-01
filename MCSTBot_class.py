@@ -4,6 +4,12 @@ import numpy as np
 import math
 import random
 
+from utils import *
+import os
+import numpy as np
+import math
+import random
+
 class MCTSNode:
     def __init__(self, state, valid_moves, player, parent=None):
         """
@@ -31,11 +37,11 @@ class MCTSNode:
             print('Invalid move')
 
         new_moves = self.valid_moves.copy()
-
+        new_moves.remove(move)
         if self.player == 0:
-            return self.state[0] | (1 << move), new_moves.remove(move)
+            return (self.state[0] | (1 << move), self.state[1]), new_moves
         else:
-            return self.state[1] | (1 << move), new_moves.remove(move)
+            return (self.state[0], self.state[1] | (1 << move)), new_moves
         
 
     def best_child(self, exploration=1.41):
@@ -49,12 +55,13 @@ class MCTSNode:
                 exploration_term = exploration * math.sqrt(math.log(self.visits) / child.visits)
                 choices_weights.append(exploitation + exploration_term)
         return self.children[choices_weights.index(max(choices_weights))]
+    
 
 class MCSTBot:
 
-    def __init__(self, size, winning_configurations, player):
+    def __init__(self, size, winning_configurations, player, n_iterations = 100):
+        self.n_iterations = n_iterations
         self.name = 'MCSTBot'
-        self.current_grid = None
         self.winning_configurations = winning_configurations
         self.size = size
         self.player = player
@@ -69,40 +76,45 @@ class MCSTBot:
     
     def next_move(self, current_state, valid_moves):
         
-        
         self.root = MCTSNode(current_state, valid_moves, self.player)
 
         for move in self.root.valid_moves:
             
             new_state, new_valid_moves = self.root.update_board(move)
             new_node = MCTSNode(new_state, new_valid_moves, 1 - self.root.player, self.root)
-
+            print(new_state)
             self.root.children.append(new_node)
 
         
-        self._build_strategy()
+        v_scores = self._build_strategy()
         
-        #return self._select_best_move()
+        return self._select_best_move(v_scores)
 
-    def _select_best_move(self):
-        best_move = None
-        best_score = -1
-        
-
-        return best_move
+    def _select_best_move(self, ucb_scores):
+        return self.root.valid_moves[np.array(ucb_scores).argmax()]
 
     def _build_strategy(self):
         
         #while resources_left():
-        for iteration in range(10000):
+        for iteration in range(self.n_iterations):
+            print(f'CURRENT UCB: {[compute_ucb(leaf) for leaf in self.root.children]}')
+            print('SELECTING')
             leaf = self._select()
+            print(f'SELECTED NODE: {leaf.state}\n')
+            print('EXPANDING')
             leaf = self._expand(leaf)
-            result = self._simulate(leaf)
+            print(f'EXPANSION DONE')
+            print(f'SIMULATING')
+            result = self._simulate(leaf.state, leaf.valid_moves, leaf.player)
+            print(f'SIMULATION OVER. RESULT: {result}')
+            print(f'BACKPROPAGATING')
             self._backpropagate(leaf, result)
 
-        for child in self.root.children:
-            print(child.ucb)
-        return
+        print([compute_ucb(child) for child in self.root.children])
+        print([leaf.V/leaf.N for leaf in self.root.children])
+        print([leaf.N for leaf in self.root.children])
+        return [[leaf.V/leaf.N for leaf in self.root.children]]
+    
     def _select(self):
         """
         Select the best leaf node to expand.
@@ -112,7 +124,7 @@ class MCSTBot:
 
         while leaf.children != []:
             
-            best_child = np.array([child.ucb for child in leaf.children]).argmax()
+            best_child = np.array([compute_ucb(child) for child in leaf.children]).argmax()
 
             leaf = leaf.children[best_child]
         
@@ -124,8 +136,10 @@ class MCSTBot:
         """
 
         if leaf.N == 0:
+            print('LEAF NOT VISITED. NOT EXPANDING')
             return leaf
-
+        print(f'LEAF: {leaf.state}')
+        print(f'LEFT MOVES: {leaf.valid_moves}')
         for move in leaf.valid_moves:
             
             new_state, new_valid_moves = leaf.update_board(move)
@@ -139,11 +153,16 @@ class MCSTBot:
     def _simulate(self, board, valid_moves, player):
         """ Rollout a game from the given node """
 
+        print(f'board in simulation: {board}')
+        print(f'valid moves {valid_moves}')
         if is_win(board, self.winning_configurations) and player == self.player:
+            print('LOSS FOR PLAYER')
             return -1
         elif is_win(board, self.winning_configurations) and player != self.player:
+            print('WIN FOR PLAYER')
             return 1
         elif is_full(board, self.size):
+            print('TIE')
             return 0
         else:
             
@@ -165,12 +184,25 @@ class MCSTBot:
 
         node.N += 1
         node.V += result
-
+        
         if node.parent is not None:
             self._backpropagate(node.parent, result)
 
+    def print_tree(self, node, indent=0):
+        print(" " * indent + str(node.status))
+        # Recursively print each child, increasing the indentation.
+        for child in node.children:
+            self.print_tree(child, indent + 4)
 
-a = MCSTBot(3 , create_win_grids(3), 0)
-#a.next_move((0,0), [0,1,2,3,4,5,6,7,8])
+def compute_ucb(leaf):
+    if leaf.parent is None:
+        print('CANNOT COMPUTE UCB FOR THE ROOT')
+        return None
+    if leaf.N == 0:
+        return math.inf
+    return leaf.V/leaf.N + 2* math.sqrt((2 * math.log(leaf.parent.N)) / leaf.N)
 
+
+# a = MCSTBot(3, create_win_grids(3), 0, 15000)
+# print(a.next_move((16, 0), [i for i in range(9)]))
 
