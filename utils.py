@@ -1,6 +1,7 @@
 import numpy as np
 import os 
 import time
+import math
 
 def create_win_grids(size=3):
     winning_masks = []
@@ -62,4 +63,13 @@ def play_move(grid, player, move):
 def clear_screen():
     """Clears the console screen to refresh the display."""
     os.system('cls' if os.name == 'nt' else 'clear')
+
+
+def compute_ucb(parent, V , N, parent_N):
+    if parent is None:
+        print('CANNOT COMPUTE UCB FOR THE ROOT')
+        return None
+    if N == 0:
+        return math.inf
+    return V/N + 2* math.sqrt((2 * math.log(parent_N)) / N)
 

@@ -37,6 +37,7 @@ class MCTSNode:
         if (self.state[0] | self.state[1]) & (1 << move) != 0:
             #raise ValueError('Invalid move')
             print('Invalid move')
+            return
 
         new_moves = self.valid_moves.copy()
         new_moves.remove(move)
@@ -61,7 +62,7 @@ class MCTSNode:
 
 class MCTSBot:
 
-    def __init__(self, size, winning_configurations, player, n_iterations = 100):
+    def __init__(self, size, winning_configurations, player, n_iterations = 100, debug=False):
         self.n_iterations = n_iterations
         self.name = 'MCTSBot'
         self.winning_configurations = winning_configurations
@@ -69,6 +70,8 @@ class MCTSBot:
         self.player = player
 
         self.root = None # starting configuration on which we start building the tree
+        
+        self.debug = debug
 
     def __str__(self):
         return self.name
@@ -84,10 +87,8 @@ class MCTSBot:
             
             new_state, new_valid_moves = self.root.update_board(move)
             new_node = MCTSNode(new_state, new_valid_moves, 1 - self.root.player, self.root)
-            #print(new_state)
             self.root.children.append(new_node)
 
-        
         v_scores = self._build_strategy()
         
         return self._select_best_move(v_scores)
@@ -99,22 +100,35 @@ class MCTSBot:
         
         #while resources_left():
         for iteration in range(self.n_iterations):
-            #print(f'CURRENT UCB: {[compute_ucb(leaf) for leaf in self.root.children]}')
-            #print('SELECTING')
+            if self.debug:
+                print(f'CURRENT UCB: {[compute_ucb(leaf) for leaf in self.root.children]}')
+                print('SELECTING')
+
             leaf = self._select()
-            #print(f'SELECTED NODE: {leaf.state}\n')
-            #print('EXPANDING')
+            
+            if self.debug:
+                print(f'SELECTED NODE: {leaf.state}\n')
+                print('EXPANDING')
+            
             leaf = self._expand(leaf)
-            #print(f'EXPANSION DONE')
-            #print(f'SIMULATING')
+
+            if self.debug:
+                print(f'EXPANSION DONE')
+                print(f'SIMULATING')
+
             result = self._simulate(leaf.state, leaf.valid_moves, leaf.player)
-            #print(f'SIMULATION OVER. RESULT: {result}')
-            #print(f'BACKPROPAGATING')
+
+            if self.debug:
+                print(f'SIMULATION OVER. RESULT: {result}')
+                print(f'BACKPROPAGATING')
+
             self._backpropagate(leaf, result)
 
-        #print([compute_ucb(child) for child in self.root.children])
-        #print([leaf.V/leaf.N for leaf in self.root.children])
-        #print([leaf.N for leaf in self.root.children])
+        if self.debug:
+            print([compute_ucb(child) for child in self.root.children])
+            print([leaf.V/leaf.N for leaf in self.root.children])
+            print([leaf.N for leaf in self.root.children])
+
         return [[leaf.V/leaf.N for leaf in self.root.children]]
     
     def _select(self):
@@ -138,10 +152,16 @@ class MCTSBot:
         """
 
         if leaf.N == 0 or leaf.valid_moves == []:
-            #print('LEAF NOT VISITED OR LEAF IS TERMINAL STAGE. NOT EXPANDING')
+            
+            if self.debug:
+                print('LEAF NOT VISITED OR LEAF IS TERMINAL STAGE. NOT EXPANDING')
+
             return leaf
-        #print(f'LEAF: {leaf.state}')
-        #print(f'LEFT MOVES: {leaf.valid_moves}')
+        
+        if self.debug:
+            print(f'LEAF: {leaf.state}')
+            print(f'LEFT MOVES: {leaf.valid_moves}')
+
         for move in leaf.valid_moves:
             
             new_state, new_valid_moves = leaf.update_board(move)
@@ -155,16 +175,21 @@ class MCTSBot:
     def _simulate(self, board, valid_moves, player):
         """ Rollout a game from the given node """
 
-        #print(f'board in simulation: {board}')
-        #print(f'valid moves {valid_moves}')
+        if self.debug:
+            print(f'board in simulation: {board}')
+            print(f'valid moves {valid_moves}')
+
         if is_win(board, self.winning_configurations) and player == self.player:
-            #print('LOSS FOR PLAYER')
+            if self.debug:
+                print('LOSS FOR PLAYER')
             return config.LOSE_SCORE
         elif is_win(board, self.winning_configurations) and player != self.player:
-            #print('WIN FOR PLAYER')
+            if self.debug:
+                print('WIN FOR PLAYER')
             return config.WIN_SCORE
         elif is_full(board, self.size):
-            #print('TIE')
+            if self.debug:
+                print('TIE')
             return config.TIE_SCORE
         else:
             
@@ -195,14 +220,6 @@ class MCTSBot:
         # Recursively print each child, increasing the indentation.
         for child in node.children:
             self.print_tree(child, indent + 4)
-
-def compute_ucb(leaf):
-    if leaf.parent is None:
-        print('CANNOT COMPUTE UCB FOR THE ROOT')
-        return None
-    if leaf.N == 0:
-        return math.inf
-    return leaf.V/leaf.N + 2* math.sqrt((2 * math.log(leaf.parent.N)) / leaf.N)
 
 
 a = MCTSBot(3, create_win_grids(3), 0, 15000)
