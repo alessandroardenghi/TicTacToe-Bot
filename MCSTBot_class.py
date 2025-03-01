@@ -10,6 +10,8 @@ import numpy as np
 import math
 import random
 
+import config
+
 class MCTSNode:
     def __init__(self, state, valid_moves, player, parent=None):
         """
@@ -57,11 +59,11 @@ class MCTSNode:
         return self.children[choices_weights.index(max(choices_weights))]
     
 
-class MCSTBot:
+class MCTSBot:
 
     def __init__(self, size, winning_configurations, player, n_iterations = 100):
         self.n_iterations = n_iterations
-        self.name = 'MCSTBot'
+        self.name = 'MCTSBot'
         self.winning_configurations = winning_configurations
         self.size = size
         self.player = player
@@ -82,7 +84,7 @@ class MCSTBot:
             
             new_state, new_valid_moves = self.root.update_board(move)
             new_node = MCTSNode(new_state, new_valid_moves, 1 - self.root.player, self.root)
-            print(new_state)
+            #print(new_state)
             self.root.children.append(new_node)
 
         
@@ -97,22 +99,22 @@ class MCSTBot:
         
         #while resources_left():
         for iteration in range(self.n_iterations):
-            print(f'CURRENT UCB: {[compute_ucb(leaf) for leaf in self.root.children]}')
-            print('SELECTING')
+            #print(f'CURRENT UCB: {[compute_ucb(leaf) for leaf in self.root.children]}')
+            #print('SELECTING')
             leaf = self._select()
-            print(f'SELECTED NODE: {leaf.state}\n')
-            print('EXPANDING')
+            #print(f'SELECTED NODE: {leaf.state}\n')
+            #print('EXPANDING')
             leaf = self._expand(leaf)
-            print(f'EXPANSION DONE')
-            print(f'SIMULATING')
+            #print(f'EXPANSION DONE')
+            #print(f'SIMULATING')
             result = self._simulate(leaf.state, leaf.valid_moves, leaf.player)
-            print(f'SIMULATION OVER. RESULT: {result}')
-            print(f'BACKPROPAGATING')
+            #print(f'SIMULATION OVER. RESULT: {result}')
+            #print(f'BACKPROPAGATING')
             self._backpropagate(leaf, result)
 
-        print([compute_ucb(child) for child in self.root.children])
-        print([leaf.V/leaf.N for leaf in self.root.children])
-        print([leaf.N for leaf in self.root.children])
+        #print([compute_ucb(child) for child in self.root.children])
+        #print([leaf.V/leaf.N for leaf in self.root.children])
+        #print([leaf.N for leaf in self.root.children])
         return [[leaf.V/leaf.N for leaf in self.root.children]]
     
     def _select(self):
@@ -135,11 +137,11 @@ class MCSTBot:
         Expand the leaf node by adding all possible children.
         """
 
-        if leaf.N == 0:
-            print('LEAF NOT VISITED. NOT EXPANDING')
+        if leaf.N == 0 or leaf.valid_moves == []:
+            #print('LEAF NOT VISITED OR LEAF IS TERMINAL STAGE. NOT EXPANDING')
             return leaf
-        print(f'LEAF: {leaf.state}')
-        print(f'LEFT MOVES: {leaf.valid_moves}')
+        #print(f'LEAF: {leaf.state}')
+        #print(f'LEFT MOVES: {leaf.valid_moves}')
         for move in leaf.valid_moves:
             
             new_state, new_valid_moves = leaf.update_board(move)
@@ -153,17 +155,17 @@ class MCSTBot:
     def _simulate(self, board, valid_moves, player):
         """ Rollout a game from the given node """
 
-        print(f'board in simulation: {board}')
-        print(f'valid moves {valid_moves}')
+        #print(f'board in simulation: {board}')
+        #print(f'valid moves {valid_moves}')
         if is_win(board, self.winning_configurations) and player == self.player:
-            print('LOSS FOR PLAYER')
-            return -1
+            #print('LOSS FOR PLAYER')
+            return config.LOSE_SCORE
         elif is_win(board, self.winning_configurations) and player != self.player:
-            print('WIN FOR PLAYER')
-            return 1
+            #print('WIN FOR PLAYER')
+            return config.WIN_SCORE
         elif is_full(board, self.size):
-            print('TIE')
-            return 0
+            #print('TIE')
+            return config.TIE_SCORE
         else:
             
             move = random.choice(valid_moves)
@@ -203,6 +205,6 @@ def compute_ucb(leaf):
     return leaf.V/leaf.N + 2* math.sqrt((2 * math.log(leaf.parent.N)) / leaf.N)
 
 
-# a = MCSTBot(3, create_win_grids(3), 0, 15000)
-# print(a.next_move((16, 0), [i for i in range(9)]))
+a = MCTSBot(3, create_win_grids(3), 0, 15000)
+print(a.next_move((5, 16), [1, 3, 5, 6, 7, 8]))
 

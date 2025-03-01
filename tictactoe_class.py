@@ -1,8 +1,10 @@
 import numpy as np
-from esbot_class import ESBot, MCTSBot
+from esbot_class import ESBot
+from MCSTBot_class import MCTSBot
 from utils import *
 import os
 from IPython.display import clear_output
+import config
 
 #import keyboard
 
@@ -51,7 +53,7 @@ class TicTacToe:
         
         self.valid_plays.remove(position)
         
-        if self._check_status():
+        if is_win(self.grid, self.winning_configurations):
             self.winner = player
             return 1
         
@@ -87,16 +89,16 @@ class TicTacToe:
             raise ValueError('player2 must be a string: name of the human player, "ESBot" or "MCTSBot"')
         
         if player0 == 'ESBot':
-            self.player1 = ESBot(self.size, self.winning_configurations)
+            self.player0 = ESBot(self.size, self.winning_configurations)
         elif player0 == 'MCTSBot':
-            self.player1 = MCTSBot('Monte Carlo Tree Search', self.size)
+            self.player0 = MCTSBot(self.size, self.winning_configurations, 0, n_iterations=config.N_ITERATIONS)
         else:
             self.player0 = player0
         
         if player1 == 'ESBot':
             self.player1 = ESBot(self.size, self.winning_configurations)
         elif player1 == 'MCTSBot':
-            self.player1 = MCTSBot('Monte Carlo Tree Search', self.size)
+            self.player1 = MCTSBot(self.size, self.winning_configurations, 1, n_iterations=config.N_ITERATIONS)
         else:
             self.player1 = player1
         
@@ -122,11 +124,13 @@ class TicTacToe:
             print("\nCurrent Board:")
             self._display_board() 
 
-            # Get user input for the move
+            if isinstance(self.current_player, ESBot):
+                position = self.current_player.next_move(self.grid) 
             
-            print(self.current_player)
-            if not isinstance(self.current_player, ESBot):
-
+            elif isinstance(self.current_player, MCTSBot):
+                position = self.current_player.next_move(self.grid, self.valid_plays) 
+            
+            else:
                 user_input = input(f"{self.current_player}, enter row (0,{self.size-1}) and column (0,{self.size-1}) separated by space (press 'enter' to exit the game)")
 
                 if user_input in "":
@@ -144,13 +148,8 @@ class TicTacToe:
                 except ValueError:
                     print(f"Invalid input. enter row (0,{self.size-1}) and column (0,{self.size-1}) separated by space (press 'enter' to exit the game)")
                     continue
-
-            else: # Bot's turn
                 
-                # TODO: Implement bot's move
-                position = self.current_player.next_move(self.grid) 
-
-            
+                
             status = self._play(self.current_player, position)
 
             if self.winner != None:
@@ -163,7 +162,8 @@ class TicTacToe:
             self.current_player = self.player0 if self.current_player == self.player1 else self.player1
 
         # Game has ended, show final board and result
-        clear_output(wait=True)
+        #
+        # clear_output(wait=True)
         print(f'\nPlayer 1: {self.player0} will play as X')
         print(f'Player 2: {self.player1} will play as O')
         print("\nFinal Board:")
