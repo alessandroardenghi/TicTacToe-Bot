@@ -140,7 +140,9 @@ class MCTSBot:
 
         while leaf.children != []:
             
-            best_child = np.array([compute_ucb(child.parent, child.V , child.N, child.parent.N) for child in leaf.children]).argmax()
+            best_child = np.array([compute_ucb(child.parent, child.V , child.N, child.parent.N) 
+                                   if child.parent != None else None 
+                                   for child in leaf.children]).argmax()
 
             leaf = leaf.children[best_child]
         
