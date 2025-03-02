@@ -89,26 +89,29 @@ class MCTSBot:
         #while resources_left():
         for iteration in range(self.n_iterations):
             if self.verbose >= 2:
+                print()
                 print(f'CURRENT UCB: {[compute_ucb(leaf) for leaf in self.root.children]}')
                 print('SELECTING')
 
             leaf = self._select()
             
             if self.verbose >= 2:
-                print(f'SELECTED NODE: {leaf.state}\n')
+                #print(f'SELECTED NODE: {display_board(leaf.state, self.size)}\n')
+                print(f'SELECTED NODE:')
+                display_board(leaf.state, self.size)
                 print('EXPANDING')
             
             leaf = self._expand(leaf)
 
             if self.verbose >= 2:
-                print(f'EXPANSION DONE')
+                print(f'EXPANSION DONE\n')
                 print(f'SIMULATING')
 
             result = self._simulate(leaf.state, leaf.valid_moves, leaf.player)
 
             if self.verbose >= 2:
-                print(f'SIMULATION OVER. RESULT: {result}')
-                print(f'BACKPROPAGATING')
+                print(f'SIMULATION OVER. RESULT: {result}\n')
+                print(f'BACKPROPAGATING\n')
 
             self._backpropagate(leaf, result)
 
@@ -143,7 +146,7 @@ class MCTSBot:
         Expand the leaf node by adding all possible children.
         """
 
-        if leaf.N == 0 or leaf.valid_moves == []:
+        if leaf.N == 0 or leaf.valid_moves == [] or is_win(leaf.state, self.winning_configurations):
             
             if self.verbose >= 2:
                 print('LEAF NOT VISITED OR LEAF IS TERMINAL STAGE. NOT EXPANDING')
@@ -151,15 +154,21 @@ class MCTSBot:
             return leaf
         
         if self.verbose >= 2:
-            print(f'LEAF: {leaf.state}')
+            print(f'LEAF: {display_board(leaf.state, self.size)}')
             print(f'LEFT MOVES: {leaf.valid_moves}')
 
-        for move in leaf.valid_moves:
-            
+        if is_move_forced(leaf.state, self.winning_configurations) is not None:
+            move = is_move_forced(leaf.state, self.winning_configurations)
             new_state, new_valid_moves = leaf.update_board(move)
             new_node = MCTSNode(new_state, new_valid_moves, 1 - leaf.player, leaf)
-
             leaf.children.append(new_node)
+        else:
+            for move in leaf.valid_moves:
+                
+                new_state, new_valid_moves = leaf.update_board(move)
+                new_node = MCTSNode(new_state, new_valid_moves, 1 - leaf.player, leaf)
+
+                leaf.children.append(new_node)
 
         return leaf.children[0]
 
@@ -168,7 +177,9 @@ class MCTSBot:
         """ Rollout a game from the given node """
 
         if self.verbose >= 2:
-            print(f'board in simulation: {board}')
+            print()
+            print(f'board in simulation:')
+            display_board(board, self.size)
             print(f'valid moves {valid_moves}')
 
         if is_win(board, self.winning_configurations) == (self.player + 1):
@@ -194,11 +205,10 @@ class MCTSBot:
             
             if is_move_forced(board, self.winning_configurations) is not None:
                 move = is_move_forced(board, self.winning_configurations)
-                print('IN')
+                print(f'MOVE FORCED: {move}')
             else:
                 print('NOT IN')
                 move = random.choice(valid_moves)
-            move = random.choice(valid_moves)
             next_player_board = board[player] | (1 << move)
             if player == 0:
                 next_board = (next_player_board, board[1])
@@ -225,8 +235,4 @@ class MCTSBot:
         # Recursively print each child, increasing the indentation.
         for child in node.children:
             self.print_tree(child, indent + 4)
-
-
-a = MCTSBot(3, create_win_grids(3), 0, 15000)
-print(a.next_move((5, 16), [1, 3, 5, 6, 7, 8]))
 
