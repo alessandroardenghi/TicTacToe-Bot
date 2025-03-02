@@ -46,23 +46,11 @@ class MCTSNode:
         else:
             return (self.state[0], self.state[1] | (1 << move)), new_moves
         
-
-    def best_child(self, exploration=1.41):
-        """Select the child with the highest UCT (Upper Confidence Bound) value."""
-        choices_weights = []
-        for child in self.children:
-            if child.visits == 0:
-                choices_weights.append(float('inf'))
-            else:
-                exploitation = child.wins / child.visits
-                exploration_term = exploration * math.sqrt(math.log(self.visits) / child.visits)
-                choices_weights.append(exploitation + exploration_term)
-        return self.children[choices_weights.index(max(choices_weights))]
     
 
 class MCTSBot:
 
-    def __init__(self, size, winning_configurations, player, n_iterations = 100, debug=False):
+    def __init__(self, size, winning_configurations, player, n_iterations = 100, verbose=0):
         self.n_iterations = n_iterations
         self.name = 'MCTSBot'
         self.winning_configurations = winning_configurations
@@ -71,7 +59,7 @@ class MCTSBot:
 
         self.root = None # starting configuration on which we start building the tree
         
-        self.debug = debug
+        self.verbose = verbose
 
     def __str__(self):
         return self.name
@@ -93,41 +81,45 @@ class MCTSBot:
         
         return self._select_best_move(v_scores)
 
-    def _select_best_move(self, ucb_scores):
-        return self.root.valid_moves[np.array(ucb_scores).argmax()]
+    def _select_best_move(self, scores):
+        return self.root.valid_moves[np.array(scores).argmax()]
 
     def _build_strategy(self):
         
         #while resources_left():
         for iteration in range(self.n_iterations):
-            if self.debug:
+            if self.verbose >= 2:
                 print(f'CURRENT UCB: {[compute_ucb(leaf) for leaf in self.root.children]}')
                 print('SELECTING')
 
             leaf = self._select()
             
-            if self.debug:
+            if self.verbose >= 2:
                 print(f'SELECTED NODE: {leaf.state}\n')
                 print('EXPANDING')
             
             leaf = self._expand(leaf)
 
-            if self.debug:
+            if self.verbose >= 2:
                 print(f'EXPANSION DONE')
                 print(f'SIMULATING')
 
             result = self._simulate(leaf.state, leaf.valid_moves, leaf.player)
 
-            if self.debug:
+            if self.verbose >= 2:
                 print(f'SIMULATION OVER. RESULT: {result}')
                 print(f'BACKPROPAGATING')
 
             self._backpropagate(leaf, result)
 
-        if self.debug:
-            print([compute_ucb(child) for child in self.root.children])
-            print([leaf.V/leaf.N for leaf in self.root.children])
-            print([leaf.N for leaf in self.root.children])
+        if self.verbose >= 1:
+            print(f'Results of Strategy:\n')
+            for i, move in enumerate(self.root.valid_moves):
+                leaf = self.root.children[i]
+                print(f'Move: {move}:\n')
+                print(f'\tUCB Score: {compute_ucb(leaf)}')
+                print(f'\tAverage Value: {leaf.V/leaf.N}')
+                print(f'\t# of Times Visited: {leaf.N}')
 
         return [[leaf.V/leaf.N for leaf in self.root.children]]
     
@@ -140,9 +132,7 @@ class MCTSBot:
 
         while leaf.children != []:
             
-            best_child = np.array([compute_ucb(child.parent, child.V , child.N, child.parent.N) 
-                                   if child.parent != None else None 
-                                   for child in leaf.children]).argmax()
+            best_child = np.array([compute_ucb(child) for child in leaf.children]).argmax()
 
             leaf = leaf.children[best_child]
         
@@ -155,12 +145,12 @@ class MCTSBot:
 
         if leaf.N == 0 or leaf.valid_moves == []:
             
-            if self.debug:
+            if self.verbose >= 2:
                 print('LEAF NOT VISITED OR LEAF IS TERMINAL STAGE. NOT EXPANDING')
 
             return leaf
         
-        if self.debug:
+        if self.verbose >= 2:
             print(f'LEAF: {leaf.state}')
             print(f'LEFT MOVES: {leaf.valid_moves}')
 
@@ -177,24 +167,37 @@ class MCTSBot:
     def _simulate(self, board, valid_moves, player):
         """ Rollout a game from the given node """
 
-        if self.debug:
+        if self.verbose >= 2:
             print(f'board in simulation: {board}')
             print(f'valid moves {valid_moves}')
 
-        if is_win(board, self.winning_configurations) and player == self.player:
-            if self.debug:
-                print('LOSS FOR PLAYER')
-            return config.LOSE_SCORE
-        elif is_win(board, self.winning_configurations) and player != self.player:
-            if self.debug:
+        if is_win(board, self.winning_configurations) == (self.player + 1):
+            if self.verbose >= 2:
                 print('WIN FOR PLAYER')
             return config.WIN_SCORE
+        elif is_win(board, self.winning_configurations) == 2 and self.player == 0:
+            if self.verbose >= 2:
+                print('LOSS FOR PLAYER')
+            return config.LOSE_SCORE
+        
+        elif is_win(board, self.winning_configurations) == 1 and self.player == 1:
+            if self.verbose >= 2:
+                print('LOSS FOR PLAYER')
+            return config.LOSE_SCORE
+        
         elif is_full(board, self.size):
-            if self.debug:
+            if self.verbose >= 2:
                 print('TIE')
             return config.TIE_SCORE
+        
         else:
             
+            if is_move_forced(board, self.winning_configurations) is not None:
+                move = is_move_forced(board, self.winning_configurations)
+                print('IN')
+            else:
+                print('NOT IN')
+                move = random.choice(valid_moves)
             move = random.choice(valid_moves)
             next_player_board = board[player] | (1 << move)
             if player == 0:
