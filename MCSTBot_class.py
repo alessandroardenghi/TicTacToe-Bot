@@ -205,9 +205,9 @@ class MCTSBot:
             
             if is_move_forced(board, self.winning_configurations) is not None:
                 move = is_move_forced(board, self.winning_configurations)
-                print(f'MOVE FORCED: {move}')
+                if self.verbose >= 2:
+                    print(f'MOVE FORCED: {move}')
             else:
-                print('NOT IN')
                 move = random.choice(valid_moves)
             next_player_board = board[player] | (1 << move)
             if player == 0:
