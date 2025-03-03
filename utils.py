@@ -93,13 +93,13 @@ def display_board(grid, size):
             print("---+" * (size - 1) + "---")
             
             
-def is_move_forced(grid, winning_configurations):
+def is_move_forced(grid, winning_configurations, size):
     conf1, conf2 = grid
     for configuration in winning_configurations:
-        if bin(configuration & conf1).count('1') == 2 and bin(configuration & conf2).count('1') == 0:
+        if bin(configuration & conf1).count('1') == (size - 1) and bin(configuration & conf2).count('1') == 0:
             #print(configuration & ~conf1)
             return int(math.log2(configuration & ~conf1))
-        if bin(configuration & conf2).count('1') == 2 and bin(configuration & conf1).count('1') == 0:
+        if bin(configuration & conf2).count('1') == (size - 1) and bin(configuration & conf1).count('1') == 0:
             #print(configuration & ~conf2)
             return int(math.log2(configuration & ~conf2))
     return None

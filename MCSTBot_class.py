@@ -65,11 +65,11 @@ class MCTSBot:
         
         self.root = MCTSNode(current_state, valid_moves, self.player)
 
-        if is_move_forced(self.root.state, self.winning_configurations) is not None:
+        if is_move_forced(self.root.state, self.winning_configurations, self.size) is not None:
 
             if self.verbose >= 1:
                 print('THE NEXT MOVE IS FORCED')
-            return is_move_forced(self.root.state, self.winning_configurations)
+            return is_move_forced(self.root.state, self.winning_configurations, self.size)
 
         for move in self.root.valid_moves:
             
@@ -157,8 +157,8 @@ class MCTSBot:
             print(f'LEAF: {display_board(leaf.state, self.size)}')
             print(f'LEFT MOVES: {leaf.valid_moves}')
 
-        if is_move_forced(leaf.state, self.winning_configurations) is not None:
-            move = is_move_forced(leaf.state, self.winning_configurations)
+        if is_move_forced(leaf.state, self.winning_configurations, self.size) is not None:
+            move = is_move_forced(leaf.state, self.winning_configurations, self.size)
             new_state, new_valid_moves = leaf.update_board(move)
             new_node = MCTSNode(new_state, new_valid_moves, 1 - leaf.player, leaf)
             leaf.children.append(new_node)
@@ -203,8 +203,8 @@ class MCTSBot:
         
         else:
             
-            if is_move_forced(board, self.winning_configurations) is not None:
-                move = is_move_forced(board, self.winning_configurations)
+            if is_move_forced(board, self.winning_configurations, self.size) is not None:
+                move = is_move_forced(board, self.winning_configurations, self.size)
                 if self.verbose >= 2:
                     print(f'MOVE FORCED: {move}')
             else:
@@ -237,5 +237,5 @@ class MCTSBot:
             self.print_tree(child, indent + 4)
 
 
-c = MCTSBot(4, create_win_grids(4), 0, n_iterations= config.N_ITERATIONS, verbose=0)
-print(c.next_move((1,2), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]))
+# c = MCTSBot(4, create_win_grids(4), 0, n_iterations= config.N_ITERATIONS, verbose=0)
+# print(c.next_move((1,2), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]))
