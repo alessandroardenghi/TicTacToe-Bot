@@ -2,6 +2,9 @@ import numpy as np
 import os 
 import time
 import math
+from tqdm import tqdm
+import config
+
 
 def create_win_grids(size=3):
     winning_masks = []
@@ -100,3 +103,42 @@ def is_move_forced(grid, winning_configurations):
             #print(configuration & ~conf2)
             return int(math.log2(configuration & ~conf2))
     return None
+
+
+
+def multiple_games(game, num_games, bot1, bot2):
+
+    player0 = bot1
+    player1 = bot2
+    
+    results = {0: 0, 1: 0, 2: 0}
+
+    for _ in tqdm(range(num_games), desc="Playing Games", unit="game"):
+        output = game.automatic_games(player0, player1)
+        results[output] += 1
+
+    print(f'\nBot {player0} is playing as first player, Bot {player1} is playing as second player')
+    print(f'Percentage of wins for {player0}: {results[1]/num_games:.2%}')
+    print(f'Percentage of wins for {player1}: {results[2]/num_games:.2%}')
+    print(f'Percentage of draws: {results[0]/num_games:.2%}')
+
+    return {player0.name: results[1]/num_games, player1.name: results[2]/num_games, 'draws': results[0]/num_games}
+
+def evaluate_bot(game_size, num_games, game_class, bot, bechmark_bot):
+
+    game = game_class(game_size)
+
+    bot_test_first = bot(game_size, game.winning_configurations, 0, n_iterations=config.N_ITERATIONS)
+    bot_test_second = bot(game_size, game.winning_configurations, 1, n_iterations=config.N_ITERATIONS)
+    bot_benchmark = bechmark_bot(game_size, game.winning_configurations)
+
+    print(f'Ouput for the bot {bot_test_first} playing as first player and the bot {bot_benchmark} playing as second player')
+    result1 = multiple_games(game, num_games, bot_test_first, bot_benchmark)
+
+    print(f'\nOuput for the bot {bot_test_second} playing as second player and the bot {bot_benchmark} playing as first player')
+    result2 = multiple_games(game, num_games, bot_benchmark, bot_test_second)
+
+    full_results = {key : (result1[key]*num_games)+(result2[key]*num_games) for key in result1.keys()}
+
+    return full_results
+

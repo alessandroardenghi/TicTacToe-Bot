@@ -4,12 +4,6 @@ import numpy as np
 import math
 import random
 
-from utils import *
-import os
-import numpy as np
-import math
-import random
-
 import config
 
 class MCTSNode:
@@ -70,6 +64,12 @@ class MCTSBot:
     def next_move(self, current_state, valid_moves):
         
         self.root = MCTSNode(current_state, valid_moves, self.player)
+
+        if is_move_forced(self.root.state, self.winning_configurations) is not None:
+
+            if self.verbose >= 1:
+                print('THE NEXT MOVE IS FORCED')
+            return is_move_forced(self.root.state, self.winning_configurations)
 
         for move in self.root.valid_moves:
             
@@ -236,3 +236,6 @@ class MCTSBot:
         for child in node.children:
             self.print_tree(child, indent + 4)
 
+
+c = MCTSBot(4, create_win_grids(4), 0, n_iterations= config.N_ITERATIONS, verbose=0)
+print(c.next_move((1,2), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]))

@@ -24,15 +24,15 @@ class TicTacToe:
 
         if self.player0 is None or self.player1 is None:
             print('Players not set up')
-            return -2
+            return 0
         
         if player not in [self.player0,self.player1]:
             print('Player not allowed')
             return 0
         
         if self._check_status() == 1: 
-            print('The game is over')
-            return 1
+            print('The game is already over')
+            return 0
         
         if position not in self.valid_plays:
             print('Play not allowed! Try again')
@@ -114,6 +114,9 @@ class TicTacToe:
 
     def PlayGame(self, player0: str, player1: str):
         """Starts an interactive Tic-Tac-Toe game loop."""
+
+        # Reset game state
+        self._reset_game()
         
         self._SetUpGame(player0, player1)
         
@@ -153,17 +156,17 @@ class TicTacToe:
             status = self._play(self.current_player, position)
 
             if self.winner != None:
-                break  # Stop loop if the game has ended
+                break  # Stop loop since the game has ended
 
             if status == -1: # Invalid move do not switch player
                 continue
-
+            
             # Switch player
             self.current_player = self.player0 if self.current_player == self.player1 else self.player1
 
         # Game has ended, show final board and result
         #
-        # clear_output(wait=True)
+        #clear_output(wait=True)
         print(f'\nPlayer 1: {self.player0} will play as X')
         print(f'Player 2: {self.player1} will play as O')
         print("\nFinal Board:")
@@ -174,8 +177,60 @@ class TicTacToe:
         else:
             print("It's a draw! 🤝")
 
+    def automatic_games(self, player0, player1, debug=False):
+        """Starts an interactive Tic-Tac-Toe game loop."""
+
         # Reset game state
         self._reset_game()
+
+        if not isinstance(player0, ESBot) and not isinstance(player0, MCTSBot):
+            raise ValueError('player1 must be an instance of ESBot or MCTSBot')
+        if not isinstance(player1, ESBot) and not isinstance(player1, MCTSBot):
+            raise ValueError('player2 must be an instance of ESBot or MCTSBot')
+        
+        ### in this case the bot will be initialized externally and passed as an argument
+        self.player0 = player0
+        self.player1 = player1
+        
+        self.current_player = self.player0
+        
+        while self._check_status() == 0:
+
+            position = None
+
+            if isinstance(self.current_player, ESBot):
+                position = self.current_player.next_move(self.grid) 
+            
+            elif isinstance(self.current_player, MCTSBot):
+                position = self.current_player.next_move(self.grid, self.valid_plays) 
+                
+            _ = self._play(self.current_player, position)
+
+            if self.winner != None:
+                break 
+
+            self.current_player = self.player0 if self.current_player == self.player1 else self.player1
+
+        # Game has ended, show final board and result
+        if debug:
+            print("\nFinal Board:")
+            self._display_board()
+        
+        if self.winner:
+            return self.game_winner()
+        else:
+            return 0
+        
+    def game_winner(self):
+        
+        if self.winner == self.player0:
+            return 1
+        elif self.winner == self.player1:
+            return 2
+        else:
+            return None
+    
+
         
 
                 
