@@ -82,8 +82,8 @@ class MCTSBot:
 
     def _build_strategy(self):
         
-        #while resources_left():
-        for iteration in range(len(self.root.valid_moves)*config.N_ITERATIONS_PER_MOVE):
+        num_iterations = len(self.root.valid_moves)*config.N_ITERATIONS_PER_MOVE
+        for iteration in range(num_iterations):
             if self.verbose >= 2:
                 print()
                 print(f'CURRENT UCB: {[compute_ucb(leaf) for leaf in self.root.children]}')
@@ -234,7 +234,3 @@ class MCTSBot:
         # Recursively print each child, increasing the indentation.
         for child in node.children:
             self.print_tree(child, indent + 4)
-
-
-# c = MCTSBot(4, create_win_grids(4), 0, n_iterations= config.N_ITERATIONS, verbose=0)
-# print(c.next_move((1,2), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]))
