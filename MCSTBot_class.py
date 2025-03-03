@@ -44,8 +44,7 @@ class MCTSNode:
 
 class MCTSBot:
 
-    def __init__(self, size, winning_configurations, player, n_iterations = 100, verbose=0):
-        self.n_iterations = n_iterations
+    def __init__(self, size, winning_configurations, player, verbose=0):
         self.name = 'MCTSBot'
         self.winning_configurations = winning_configurations
         self.size = size
@@ -58,15 +57,12 @@ class MCTSBot:
     def __str__(self):
         return self.name
     
-    def resources_left(self):
-        return True
     
     def next_move(self, current_state, valid_moves):
         
         self.root = MCTSNode(current_state, valid_moves, self.player)
 
         if is_move_forced(self.root.state, self.winning_configurations, self.size) is not None:
-
             if self.verbose >= 1:
                 print('THE NEXT MOVE IS FORCED')
             return is_move_forced(self.root.state, self.winning_configurations, self.size)
@@ -87,7 +83,7 @@ class MCTSBot:
     def _build_strategy(self):
         
         #while resources_left():
-        for iteration in range(self.n_iterations):
+        for iteration in range(len(self.root.valid_moves)*config.N_ITERATIONS_PER_MOVE):
             if self.verbose >= 2:
                 print()
                 print(f'CURRENT UCB: {[compute_ucb(leaf) for leaf in self.root.children]}')
@@ -225,7 +221,10 @@ class MCTSBot:
         """ Update the node statistics """
 
         node.N += 1
-        node.V += result
+        if self.player != node.player:
+            node.V += result
+        else:
+            node.V -= result
         
         if node.parent is not None:
             self._backpropagate(node.parent, result)

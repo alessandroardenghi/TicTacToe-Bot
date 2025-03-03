@@ -91,14 +91,14 @@ class TicTacToe:
         if player0 == 'ESBot':
             self.player0 = ESBot(self.size, self.winning_configurations)
         elif player0 == 'MCTSBot':
-            self.player0 = MCTSBot(self.size, self.winning_configurations, 0, n_iterations=config.N_ITERATIONS)
+            self.player0 = MCTSBot(self.size, self.winning_configurations, 0)
         else:
             self.player0 = player0
         
         if player1 == 'ESBot':
             self.player1 = ESBot(self.size, self.winning_configurations)
         elif player1 == 'MCTSBot':
-            self.player1 = MCTSBot(self.size, self.winning_configurations, 1, n_iterations=config.N_ITERATIONS)
+            self.player1 = MCTSBot(self.size, self.winning_configurations, 1)
         else:
             self.player1 = player1
         

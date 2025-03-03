@@ -128,8 +128,8 @@ def evaluate_bot(game_size, num_games, game_class, bot, bechmark_bot):
 
     game = game_class(game_size)
 
-    bot_test_first = bot(game_size, game.winning_configurations, 0, n_iterations=config.N_ITERATIONS)
-    bot_test_second = bot(game_size, game.winning_configurations, 1, n_iterations=config.N_ITERATIONS)
+    bot_test_first = bot(game_size, game.winning_configurations, 0)
+    bot_test_second = bot(game_size, game.winning_configurations, 1)
     bot_benchmark = bechmark_bot(game_size, game.winning_configurations)
 
     print(f'Ouput for the bot {bot_test_first} playing as first player and the bot {bot_benchmark} playing as second player')
